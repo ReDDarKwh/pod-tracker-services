@@ -4,12 +4,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using WebApi.Jwt.Filters;
 
 namespace PodTrackerServices.Controllers
 {
     public class ValuesController : ApiController
     {
         // GET api/values
+        [JwtAuthentication]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
