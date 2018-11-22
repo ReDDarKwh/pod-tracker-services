@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PodTrackerServices.Helpers;
-using PodTrackerServices.podtrackdb;
+using PodTrackerServices.Models;
 using PodTrackerServices.Services;
 using static PodTrackerServices.Helpers.PasswordSecurity;
 
@@ -35,7 +35,7 @@ namespace PodTrackerServices.Controllers
         [HttpGet]
         public IEnumerable<PodUser> GetPodUser()
         {
-            using (var db = new podtrackdbContext())
+            using (var db = new PodTrackdbContext())
             {
 
                 return db.PodUser;
@@ -115,8 +115,12 @@ namespace PodTrackerServices.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] PodUser podUser)
         {
-            using (var db = new podtrackdbContext())
+            using (var db = new PodTrackdbContext())
             {
+
+                if (db.PodUser.FirstOrDefault(x => x.Username == podUser.Username) != null) {
+                    return BadRequest(new { message = "Username already exists." });
+                }
 
                 podUser.Password = PasswordStorage.CreateHash(podUser.Password);
 

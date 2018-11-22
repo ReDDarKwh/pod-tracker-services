@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PodTrackerServices.podtrackdb
+namespace PodTrackerServices.Models
 {
     public partial class PodUser
     {
@@ -14,6 +14,6 @@ namespace PodTrackerServices.podtrackdb
         public string Username { get; set; }
         public string Password { get; set; }
 
-        public ICollection<FollowedPodcast> FollowedPodcast { get; set; }
+        public virtual ICollection<FollowedPodcast> FollowedPodcast { get; set; }
     }
 }

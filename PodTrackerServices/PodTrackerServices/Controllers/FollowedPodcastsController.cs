@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PodTrackerServices.podtrackdb;
+using PodTrackerServices.Models;
+
 
 namespace PodTrackerServices.Controllers
 {
@@ -13,30 +15,48 @@ namespace PodTrackerServices.Controllers
     [ApiController]
     public class FollowedPodcastsController : ControllerBase
     {
-        private readonly podtrackdbContext _context;
+        private readonly PodTrackdbContext _context;
 
-        public FollowedPodcastsController(podtrackdbContext context)
+        public FollowedPodcastsController(PodTrackdbContext context)
         {
             _context = context;
         }
 
-        // GET: api/FollowedPodcasts
-        [HttpGet]
-        public IEnumerable<FollowedPodcast> GetFollowedPodcast()
+        [HttpGet("favorite")]
+        public IActionResult GetFollowedPodcast()
         {
-            return _context.FollowedPodcast;
+
+            var userID = Convert.ToInt32(this.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var followedPodcast = _context.FollowedPodcast.Where(x => x.Followed  && x.UserId == userID)
+                .OrderBy(x=>x.Title).ToList();
+            return Ok(followedPodcast);
+        }
+
+        [HttpGet("recentlyPlayed")]
+        public IActionResult GetRecentryPlayedPodcast()
+        {
+            var userID = Convert.ToInt32(this.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var followedPodcast = _context.FollowedPodcast.Where(x => x.LastListened!=null && x.UserId == userID)
+                .OrderByDescending(x => x.LastListened).Take(20).ToList();
+            return Ok(followedPodcast);
         }
 
         // GET: api/FollowedPodcasts/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetFollowedPodcast([FromRoute] int id)
+        [HttpGet]
+        public async Task<IActionResult> GetFollowedPodcast([FromQuery] string rss)
         {
+
+            var userID = Convert.ToInt32(this.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            var followedPodcast = await _context.FollowedPodcast.FindAsync(id);
+            FollowedPodcast followedPodcast;
+           
+                followedPodcast = await _context.FollowedPodcast.Include(x=>x.PodcastEpisode)
+                        .FirstOrDefaultAsync(x => x.Rss == rss && x.UserId == userID);
+           
 
             if (followedPodcast == null)
             {
@@ -47,15 +67,15 @@ namespace PodTrackerServices.Controllers
         }
 
         // PUT: api/FollowedPodcasts/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutFollowedPodcast([FromRoute] int id, [FromBody] FollowedPodcast followedPodcast)
+        [HttpPut]
+        public async Task<IActionResult> PutFollowedPodcast([FromQuery] string rss, [FromBody] FollowedPodcast followedPodcast)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != followedPodcast.Id)
+            if (rss != followedPodcast.Rss)
             {
                 return BadRequest();
             }
@@ -68,7 +88,7 @@ namespace PodTrackerServices.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!FollowedPodcastExists(id))
+                if (!FollowedPodcastExists(rss))
                 {
                     return NotFound();
                 }
@@ -93,19 +113,23 @@ namespace PodTrackerServices.Controllers
             _context.FollowedPodcast.Add(followedPodcast);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetFollowedPodcast", new { id = followedPodcast.Id }, followedPodcast);
+            return CreatedAtAction("GetFollowedPodcast", new { rss = followedPodcast.Rss }, followedPodcast);
         }
 
         // DELETE: api/FollowedPodcasts/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFollowedPodcast([FromRoute] int id)
+        [HttpDelete]
+        public async Task<IActionResult> DeleteFollowedPodcast([FromQuery] string rss)
         {
+
+            var userID = Convert.ToInt32(this.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var followedPodcast = await _context.FollowedPodcast.FindAsync(id);
+            var followedPodcast = await _context.FollowedPodcast
+                .FirstOrDefaultAsync(x => x.Rss == rss && x.UserId == userID);
             if (followedPodcast == null)
             {
                 return NotFound();
@@ -117,9 +141,9 @@ namespace PodTrackerServices.Controllers
             return Ok(followedPodcast);
         }
 
-        private bool FollowedPodcastExists(int id)
+        private bool FollowedPodcastExists(string rss)
         {
-            return _context.FollowedPodcast.Any(e => e.Id == id);
+            return _context.FollowedPodcast.Any(e => e.Rss == rss);
         }
     }
 }

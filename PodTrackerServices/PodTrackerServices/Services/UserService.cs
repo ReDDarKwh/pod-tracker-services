@@ -2,7 +2,6 @@
 using Microsoft.IdentityModel.Tokens;
 using PodTrackerServices.Helpers;
 using PodTrackerServices.Models;
-using PodTrackerServices.podtrackdb;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -22,7 +21,7 @@ namespace PodTrackerServices.Services
 
     public class UserService : IUserService
     {
-       
+
 
         private readonly AppSettings _appSettings;
 
@@ -34,7 +33,7 @@ namespace PodTrackerServices.Services
         public User Authenticate(string username, string password)
         {
 
-            using (var db = new podtrackdbContext())
+            using (var db = new PodTrackdbContext())
             {
 
                 var podUser = db.PodUser.SingleOrDefault(x => x.Username == username);
@@ -44,7 +43,12 @@ namespace PodTrackerServices.Services
                 if (podUser == null || !passwordMatch)
                     return null;
 
-                var user = new User { PodUser = podUser };
+                var user = new User
+                {
+                    Username = podUser.Username,
+                    Id = podUser.Id,
+                    Password = podUser.Password
+                };
 
                 // authentication successful so generate jwt token
                 var tokenHandler = new JwtSecurityTokenHandler();
@@ -53,7 +57,8 @@ namespace PodTrackerServices.Services
                 {
                     Subject = new ClaimsIdentity(new Claim[]
                     {
-                    new Claim(ClaimTypes.Name, user.PodUser.Username.ToString())
+                    new Claim(ClaimTypes.Name, user.Username.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                     }),
                     Expires = DateTime.UtcNow.AddDays(7),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -62,7 +67,7 @@ namespace PodTrackerServices.Services
                 user.Token = tokenHandler.WriteToken(token);
 
                 // remove password before returning
-                user.PodUser.Password = null;
+                user.Password = null;
 
                 return user;
             }

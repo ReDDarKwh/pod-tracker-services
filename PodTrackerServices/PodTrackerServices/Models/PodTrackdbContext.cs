@@ -2,20 +2,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace PodTrackerServices.podtrackdb
+namespace PodTrackerServices.Models
 {
-    public partial class podtrackdbContext : DbContext
+    public partial class PodTrackdbContext : DbContext
     {
-        public podtrackdbContext()
+        public PodTrackdbContext()
         {
         }
 
-        public podtrackdbContext(DbContextOptions<podtrackdbContext> options)
+        public PodTrackdbContext(DbContextOptions<PodTrackdbContext> options)
             : base(options)
         {
         }
 
         public virtual DbSet<FollowedPodcast> FollowedPodcast { get; set; }
+        public virtual DbSet<PodcastEpisode> PodcastEpisode { get; set; }
         public virtual DbSet<PodUser> PodUser { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -40,11 +41,15 @@ namespace PodTrackerServices.podtrackdb
                     .HasColumnName("ID")
                     .HasColumnType("int(11)");
 
+                entity.Property(e => e.ImageUrl).HasColumnType("mediumtext");
+
                 entity.Property(e => e.Rss)
                     .HasColumnName("RSS")
                     .HasColumnType("mediumtext");
 
-                entity.Property(e => e.TimeStep).HasColumnType("int(11)");
+                entity.Property(e => e.Title)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.UserId)
                     .HasColumnName("UserID")
@@ -54,6 +59,42 @@ namespace PodTrackerServices.podtrackdb
                     .WithMany(p => p.FollowedPodcast)
                     .HasForeignKey(d => d.UserId)
                     .HasConstraintName("ID");
+
+                entity.Property(e => e.Followed)
+                   .HasColumnType("bit(1)")
+                 .HasDefaultValueSql("0");
+
+                entity.Property(e => e.LastListened)
+                   .HasColumnType("datetime");
+                
+            });
+
+            modelBuilder.Entity<PodcastEpisode>(entity =>
+            {
+                entity.ToTable("PodcastEpisode", "podtrackdb");
+
+                entity.HasIndex(e => e.FollowedPodcastId)
+                    .HasName("ID_idx");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("ID")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.AudioUrl)
+                    .IsRequired()
+                    .HasColumnType("mediumtext");
+
+                entity.Property(e => e.FollowedPodcastId)
+                    .HasColumnName("FollowedPodcastID")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.TimeStep)
+                    .HasColumnType("int(11)")
+                    .HasDefaultValueSql("0");
+
+              
+
+
             });
 
             modelBuilder.Entity<PodUser>(entity =>

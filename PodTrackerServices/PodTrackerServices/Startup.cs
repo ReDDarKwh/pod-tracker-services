@@ -15,6 +15,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PodTrackerServices.Helpers;
 using PodTrackerServices.Services;
+using PodTrackerServices.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace PodTrackerServices
 {
@@ -59,6 +62,17 @@ namespace PodTrackerServices
                     ValidateAudience = false
                 };
             });
+
+            services.AddDbContext<PodTrackdbContext>(
+                options=> options
+                
+                .UseMySQL("server=192.168.0.105;port=3306;user=test;password=test;database=podtrackdb")
+                );
+
+            //services.AddIdentity<User, IdentityRole>()
+            //                .AddEntityFrameworkStores<PodTrackdbContext>()
+            //                .AddDefaultTokenProviders();
+
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
