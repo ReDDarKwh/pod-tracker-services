@@ -66,7 +66,7 @@ namespace PodTrackerServices
             services.AddDbContext<PodTrackdbContext>(
                 options=> options
                 
-                .UseMySQL("server=192.168.0.105;port=3306;user=test;password=test;database=podtrackdb")
+                .UseMySQL("server=24.122.174.209;port=3306;user=test;password=test;database=podtrackdb")
                 );
 
             //services.AddIdentity<User, IdentityRole>()

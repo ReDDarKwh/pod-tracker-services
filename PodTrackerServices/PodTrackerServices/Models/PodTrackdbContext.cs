@@ -24,7 +24,7 @@ namespace PodTrackerServices.Models
             if (!optionsBuilder.IsConfigured)
             {
 
-                optionsBuilder.UseMySQL("server=192.168.0.105;port=3306;user=test;password=test;database=podtrackdb");
+                optionsBuilder.UseMySQL("server=24.122.174.209;port=3306;user=test;password=test;database=podtrackdb");
             }
         }
 
